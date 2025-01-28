@@ -17,10 +17,35 @@ Run docker with the python:3.12.8 image in an interactive mode, use the entrypoi
 
 What's the version of pip in the image?
 
-- [ ] 24.3.1
+- [X] 24.3.1
 - [ ] 24.2.1
 - [ ] 23.3.1
 - [ ] 23.2.1
+
+### **Step-by-Step Solution**
+
+1. **Run the Docker Container in Interactive Mode:**
+Use the **`docker run`** command to start a container from the **`python:3.12.8`** image in interactive mode.
+    
+    ```bash
+    docker run -it --entrypoint bash python:3.12.8
+    
+    ```
+    
+2. **Check the `pip` Version:**
+Once inside the container, we can check the version of **`pip`** by running:
+    
+    ```bash
+    pip --version
+    
+    ```
+    
+    Alternatively, we can use:
+
+    ```bash
+    pip -V
+    ```
+
 
 ## Question 2. Understanding Docker networking and docker-compose
 Given the following docker-compose.yaml, what is the hostname and port that pgadmin should use to connect to the postgres database?
@@ -61,10 +86,18 @@ volumes:
 - [ ] localhost:5432
 - [ ] db:5433
 - [ ] postgres:5432
-- [ ] db:5432
+- [X] db:5432
 
 
 If there are more than one answers, select only one of them.
+
+### **Step-by-Step Solution**
+- **Hostname:** Since the PostgreSQL service is named **`db`**, pgAdmin should use **`db`** as the hostname to connect to the PostgreSQL database.
+- **Port:** Inside the Docker network, the PostgreSQL service is accessible on its default port **`5432`**.
+
+Therefore, the correct **`hostname`** and **`port`** that **`pgadmin`** should use to connect to the PostgreSQL database is:
+
+- **db:5432**
 
 ##  Prepare Postgres
 
@@ -100,7 +133,70 @@ Answers:
 - [ ] 104,802;  198,924;  109,603;  27,678;  35,189
 - [ ] 104,793;  201,407;  110,612;  27,831;  35,281
 - [ ] 104,793;  202,661;  109,603;  27,678;  35,189
-- [ ] 104,838;  199,013;  109,645;  27,688;  35,202
+- [X] 104,838;  199,013;  109,645;  27,688;  35,202
+
+### Solution:
+- Up to 1 mile:
+  
+    ```sql
+    SELECT
+        COUNT(*)
+    FROM
+        public.green_taxi_data
+    WHERE
+        lpep_pickup_datetime >= '2019-10-01' AND lpep_pickup_datetime < '2019-11-01'
+    AND trip_distance <= 1;
+
+    ```
+
+
+- In between 1 (exclusive) and 3 miles (inclusive):
+  
+    ```sql
+    SELECT
+        COUNT(*)
+    FROM
+        public.green_taxi_data
+    WHERE
+        lpep_pickup_datetime >= '2019-10-01' AND lpep_pickup_datetime < '2019-11-01'
+        AND trip_distance > 1 AND trip_distance <= 3;
+    ```
+
+- In between 3 (exclusive) and 7 miles (inclusive):
+    
+    ```sql
+    SELECT
+        COUNT(*)
+    FROM
+        public.green_taxi_data
+    WHERE
+        lpep_pickup_datetime >= '2019-10-01' AND lpep_pickup_datetime < '2019-11-01'
+        AND trip_distance > 3 AND trip_distance <= 7;
+    ```
+
+- In between 7 (exclusive) and 10 miles (inclusive):
+      
+    ```sql
+    SELECT
+        COUNT(*)
+    FROM
+        public.green_taxi_data
+    WHERE
+        lpep_pickup_datetime >= '2019-10-01' AND lpep_pickup_datetime < '2019-11-01'
+        AND trip_distance > 7 AND trip_distance <= 10;
+    ```
+
+- Over 10 miles:
+      
+    ```sql
+    SELECT
+        COUNT(*)
+    FROM
+        public.green_taxi_data
+    WHERE
+        lpep_pickup_datetime >= '2019-10-01' AND lpep_pickup_datetime < '2019-11-01'
+        AND trip_distance > 10;
+    ```
 
 
 ## Question 4. Longest trip for each day
@@ -113,8 +209,25 @@ Tip: For every day, we only care about one single trip with the longest distance
 - [ ] 2019-10-11
 - [ ] 2019-10-24
 - [ ] 2019-10-26
-- [ ] 2019-10-31
+- [X] 2019-10-31
 
+### Solution:
+```sql
+SELECT
+    "PULocationID",
+    SUM("total_amount") AS total_amount
+FROM
+    public.green_taxi_data
+WHERE
+    DATE("lpep_pickup_datetime") = '2019-10-18'
+GROUP BY
+    "PULocationID"
+HAVING
+    SUM("total_amount") > 13000
+ORDER BY
+    total_amount DESC
+LIMIT 3;
+```
 
 ## Question 5. Three biggest pickup zones
 
@@ -123,11 +236,29 @@ Which were the top pickup locations with over 13,000 in
 
 Consider only `lpep_pickup_datetime` when filtering by date.
  
-- [ ] East Harlem North, East Harlem South, Morningside Heights
+- [X] East Harlem North, East Harlem South, Morningside Heights
 - [ ] East Harlem North, Morningside Heights
 - [ ] Morningside Heights, Astoria Park, East Harlem South
 - [ ] Bedford, East Harlem North, Astoria Park
 
+### Solution:
+
+```sql
+SELECT
+    "PULocationID",
+    SUM("total_amount") AS total_amount
+FROM
+    public.green_taxi_data
+WHERE
+    DATE("lpep_pickup_datetime") = '2019-10-18'
+GROUP BY
+    "PULocationID"
+HAVING
+    SUM("total_amount") > 13000
+ORDER BY
+    total_amount DESC
+LIMIT 3;
+```
 
 ## Question 6. Largest tip
 
@@ -140,10 +271,32 @@ Note: it's `tip` , not `trip`
 We need the name of the zone, not the ID.
 
 - [ ] Yorkville West
-- [ ] JFK Airport
+- [X] JFK Airport
 - [ ] East Harlem North
 - [ ] East Harlem South
 
+### Solution:
+
+```sql
+SELECT
+    tz_dropoff."Zone" AS dropoff_zone,
+    MAX(gt."tip_amount") AS largest_tip
+FROM
+    green_taxi_data gt
+JOIN
+    taxi_zones tz_pickup ON gt."PULocationID" = tz_pickup."LocationID"
+JOIN
+    taxi_zones tz_dropoff ON gt."DOLocationID" = tz_dropoff."LocationID"
+WHERE
+    tz_pickup."Zone" = 'East Harlem North'
+    AND gt."lpep_pickup_datetime" >= '2019-10-01'
+    AND gt."lpep_pickup_datetime" < '2019-11-01'
+GROUP BY
+    tz_dropoff."Zone"
+ORDER BY
+    largest_tip DESC
+LIMIT 1;
+```
 
 ## Terraform
 
@@ -167,7 +320,7 @@ Answers:
 - [ ] terraform import, terraform apply -y, terraform destroy
 - [ ] teraform init, terraform plan -auto-apply, terraform rm
 - [ ] terraform init, terraform run -auto-approve, terraform destroy
-- [ ] terraform init, terraform apply -auto-approve, terraform destroy
+- [X] terraform init, terraform apply -auto-approve, terraform destroy
 - [ ] terraform import, terraform apply -y, terraform rm
 
 
