@@ -21,12 +21,13 @@
 ###############################third iteration###############################
 FROM python:3.9
 
-RUN pip install pandas
+RUN apt-get update && apt-get install wget
+RUN pip install pandas sqlalchemy psycopg2
 
 # create a directory called app
 WORKDIR /app 
 
 # copy the pipeline.py file from the current directory to the app directory in the container (target)
-COPY pipeline.py pipeline.py
+COPY ingest_data.py ingest_data.py
 
-ENTRYPOINT [ "python", "pipeline.py" ]
+ENTRYPOINT [ "python", "ingest_data.py" ]
