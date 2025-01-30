@@ -494,3 +494,145 @@ Good luck everyone!
 
 ---
 ---
+
+# [🎥 Connecting pgAdmin and Postgres](https://youtu.be/hCAIVe9N0ow?si=bbBIKAfSjb_dkHP0)
+
+## Study Notes 1.2.3: Connecting pgAdmin and PostgreSQL
+
+### Overview from [Lecture 1.2.3](https://youtu.be/hCAIVe9N0ow?si=bbBIKAfSjb_dkHP0).
+
+- **Purpose**: To connect pgAdmin, a web-based GUI tool, to a PostgreSQL database for easier database management and querying.
+- **Context**: Utilizing Docker to run PostgreSQL and pgAdmin in containers.
+
+### Key Concepts
+
+### 1. **Introduction to pgAdmin**
+
+- pgAdmin is a popular tool for managing PostgreSQL databases.
+- Provides a graphical interface for executing queries, managing database objects, and visualizing data.
+
+### 2. **Setting Up Docker**
+
+- **Docker**: A platform for developing, shipping, and running applications in containers.
+- **Containers**: Lightweight, standalone, executable packages that include everything needed to run a piece of software.
+
+### 3. **Creating a Docker Network**
+
+- Create a dedicated network for the PostgreSQL and pgAdmin containers to communicate.
+- Command to create a network:
+    
+    ```bash
+    docker network create my_network
+    
+    ```
+    
+
+### 4. **Running PostgreSQL Container**
+
+- Example command to run a PostgreSQL container:
+    
+    ```bash
+    docker run --name postgres_container --network my_network -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+    
+    ```
+    
+- **Parameters**:
+    - `-name`: Assigns a name to the container.
+    - `-network`: Connects the container to the specified network.
+    - `e`: Sets environment variables (e.g., password).
+    - `d`: Runs the container in detached mode.
+
+### 5. **Running pgAdmin Container**
+
+- Example command to run a pgAdmin container:
+    
+    ```docker
+    docker run --name pgadmin_container --network my_network -e PGADMIN_DEFAULT_EMAIL=user@domain.com -e PGADMIN_DEFAULT_PASSWORD=admin -p 80:80 -d dpage/pgadmin4
+    
+    ```
+    
+    In our case:
+    
+    ```docker
+    docker run -it \
+    	-e PGADMIN_DEFAULT_EMAIL='admin@admin.com' \
+    	-e PGADMIN_DEFAULT_PASSWORD='root' \
+    	-p 8080:80 \
+    	dpage/pgadmin4
+    ```
+    
+- **Parameters**:
+    - `p`: Maps the host port to the container port (e.g., 80:80).
+    - `e`: Sets default email and password for pgAdmin.
+
+### 6. **Connecting pgAdmin to PostgreSQL**
+
+- Open pgAdmin in a web browser (usually at `http://localhost`).
+In our case, we use [`http://localhost:8080/`](http://localhost:8080/)
+- Since we created separate container for pgAdmin and Postgres, we need to use Server to make them able to communicate with each other.
+    - Create Network: `docker network create pg-network`
+    - Run Docker container:
+        
+        ```bash
+        docker run -it \
+          -e POSTGRES_USER="root" \
+          -e POSTGRES_PASSWORD="root" \
+          -e POSTGRES_DB="ny_taxi" \
+          -v c:/workspace/de-zoomcamp/1_intro_to_data_engineering/docker_sql/ny_taxi_postgres_data:/var/lib/postgresql/data \
+          -p 5433:5432 \
+          --network=pg-network \
+          --name pg-database \
+          postgres:13
+        ```
+        
+        In our case:
+        
+        ```bash
+        docker run -it \
+          -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+          -e PGADMIN_DEFAULT_PASSWORD="root" \
+          -p 8080:80 \
+          --network=pg-network \
+          --name pgadmin \
+          dpage/pgadmin4
+        ```
+        
+    
+- Create a new server connection:
+    - **General Tab**: Name the server connection.
+    - **Connection Tab**:
+        - Host: `postgres_container` (the name of the PostgreSQL container) or its ip address. If connection failed, **Try using IP Address:**
+        Use the IP address of the `hopeful_yonath` container (172.19.0.3) in the pgAdmin configuration instead of the container name or pg-database.
+        - Port: `5432` (default Docker PostgreSQL container port, NOT HOST PORT).
+        - Username: `root`.
+        - Password: The password set during container creation.
+
+### 7. **Exploring the Database**
+
+- After connecting, navigate through the database schema.
+- Execute SQL queries directly in pgAdmin.
+- Use the GUI to create, read, update, and delete database entries.
+    
+    E.g. Query Tool:
+    
+    ```sql
+    SELECT
+    	COUNT(1)
+    FROM
+    	yellow_taxi_data;
+    ```
+    
+
+### 8. **Troubleshooting Connection Issues**
+
+- Ensure both containers are running in the same network.
+- Check firewall settings and port mappings.
+- Verify the credentials and connection parameters.
+
+### Conclusion
+
+- Connecting pgAdmin to PostgreSQL enhances database management through a user-friendly interface.
+- Utilizing Docker simplifies the setup process and ensures a consistent environment for development and testing.
+
+---
+---
