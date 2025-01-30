@@ -324,3 +324,173 @@ Good luck everyone!
 - Apply Docker to run PostgreSQL and practice SQL.
 - Build and test data pipelines using Docker containers.
 - Explore deploying containers to cloud platforms for scalable execution.
+
+---
+---
+
+# [🎥 Ingesting NY Taxi Data to Postgres](https://youtu.be/2JM-ziJt0WI?si=mbJhHB7ZjDj5sQ2-)
+
+## Study Notes: DE Zoomcamp 1.2.2 - Ingesting NY Taxi Data to Postgres
+### **Introduction and Context**
+
+- The [video](https://youtu.be/2JM-ziJt0WI?si=mbJhHB7ZjDj5sQ2-) builds upon the previous lesson 1.2.1 where Docker was introduced, focusing on how it can be used for data engineering tasks.
+- The goal of this session is to set up a PostgreSQL database using Docker, ingest data into it, and practice SQL queries.
+- The NY Taxi dataset will be used throughout the course to learn SQL and data ingestion techniques.
+
+---
+
+### **Key Concepts Covered**
+### **1. Running PostgreSQL in Docker**
+
+- **Docker Image**: Official PostgreSQL Docker image (version 13) is used.
+- **Configuration**: Includes setting environment variables for the database:
+    - User: `root`
+    - Password: `root`
+    - Database: `ny_taxi`
+        
+        ```bash
+        docker run -it \
+          -e POSTGRES_USER="root" \
+          -e POSTGRES_PASSWORD="root" \
+          -e POSTGRES_DB="ny_taxi" \
+          -v c:/workspace/de-zoomcamp/1_intro_to_data_engineering/docker_sql/ny_taxi_postgres_data:/var/lib/postgresql/data \
+          -p 5433:5432 \
+          postgres:13
+        ```
+        
+- **Commands for Configuration**:
+    - Use `e` flags to set environment variables.
+    - Use `v` flag to map a folder on the host machine to the container for persistent storage. `path-to-host-folder:path-to-container-folder`
+    - Use `p` flag to map ports (5432 for PostgreSQL). If you happen to install Postgres on your local machine, make sure to use other port number for your Docker Postgresql to avoid conflict such as:
+    **`PGCLI -connection failed: FATAL: password authentication failed for user "root"`**
+
+### **2. Persisting Data with Docker**
+
+- **Mounting Volumes**:
+    - A folder (e.g., `ny_taxi_postgres_data`) is mapped to store database files.
+    - Ensures that data remains available even if the Docker container is restarted.
+- **Windows-Specific Note**: Windows paths require absolute paths with specific formatting (e.g., `C:\path\to\folder`).
+
+### **3. Accessing PostgreSQL Database**
+
+- **Using pgcli**:
+    - A Python-based command-line client for PostgreSQL.
+    - Installed using `pip install pgcli`.
+    - Connection command format: `pgcli -h localhost -p 5432 -u root -d ny_taxi`.
+    If you installed Postgres on your local machine, then consider mapping other port to your local machine to run Docker Postgres successfully. E.g.:
+    `pgcli -h localhost -p 5433 -u root -d ny_taxi`
+    - Allows running SQL queries directly from the terminal, e.g.:
+        - `\dt` = list tables
+        - `\db` = list tablespaces
+        - `SELECT COUNT(1) FROM yellow_taxi_data;` = count data rows available
+
+### **4. Exploring the NY Taxi Dataset**
+
+- **Dataset Overview**:
+    - Contains taxi trip records (yellow and green taxis) from NYC.
+    - Fields include pickup/dropoff times, passenger count, distance, fare, tips, etc.
+    - [Data dictionary](https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf) is available for detailed field descriptions.
+- **Downloading the Dataset**:
+    - Use `wget` or manual download to get the CSV files:
+        - yellow_tripdata_2021-01.csv
+        - [taxi_zone_lookup.csv](https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv) 
+        e.g. `wget https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv`
+    - For performance, process only a subset of rows (e.g., first 100 rows).
+
+### **5. Preparing the Dataset with Pandas**
+
+- **Environment Setup**:
+    - Use Jupyter Notebook for interactive data exploration.
+    - Libraries used: `pandas` and `sqlalchemy`.
+- **Initial Data Exploration**:
+    - Read the dataset using `pandas.read_csv()`.
+    - Examine the first few rows and basic statistics.
+- **Data Schema Definition**:
+    - Create an SQL table schema based on the dataset structure.
+    - Example schema:
+        
+        ```sql
+        CREATE TABLE yellow_taxi_data (
+            vendor_id INTEGER,
+            pickup_datetime TIMESTAMP,
+            dropoff_datetime TIMESTAMP,
+            passenger_count INTEGER,
+            trip_distance FLOAT,
+            fare_amount DECIMAL,
+            tip_amount DECIMAL,
+            total_amount DECIMAL
+        );
+        
+        ```
+        
+    - Data Definition Language: `print(pd.io.sql.get_schema(df, name='yellow_taxi_data'))`:
+        
+        ```sql
+        CREATE TABLE yellow_taxi_data (
+        	"VendorID" BIGINT, 
+        	tpep_pickup_datetime TIMESTAMP WITHOUT TIME ZONE, 
+        	tpep_dropoff_datetime TIMESTAMP WITHOUT TIME ZONE, 
+        	passenger_count BIGINT, 
+        	trip_distance FLOAT(53), 
+        	"RatecodeID" BIGINT, 
+        	store_and_fwd_flag TEXT, 
+        	"PULocationID" BIGINT, 
+        	"DOLocationID" BIGINT, 
+        	payment_type BIGINT, 
+        	fare_amount FLOAT(53), 
+        	extra FLOAT(53), 
+        	mta_tax FLOAT(53), 
+        	tip_amount FLOAT(53), 
+        	tolls_amount FLOAT(53), 
+        	improvement_surcharge FLOAT(53), 
+        	total_amount FLOAT(53), 
+        	congestion_surcharge FLOAT(53)
+        )
+        ```
+        
+    - Data ingestion in batch due to large number of dataset:
+        - shift+tab = open help for function in jupyter notebook
+
+### **6. Ingesting Data into PostgreSQL**
+
+- **Chunk Processing**:
+    - To handle large datasets efficiently, read and insert data in chunks (e.g., 100,000 rows per chunk).
+    - Use Pandas’ `to_sql` method to insert data into PostgreSQL.
+- **Connection Setup**:
+    - Use `sqlalchemy` to create a database engine.
+    - Connection string format: `postgresql://<user>:<password>@<host>:<port>/<database>`.
+- **Ingestion Workflow**:
+    - Generate the SQL schema.
+    - Create the table in PostgreSQL.
+    - Insert data chunk by chunk.
+    - Verify the data using SQL queries (e.g., `SELECT COUNT(*) FROM yellow_taxi_data;`).
+
+---
+
+### **Practical Tips and Insights**
+
+1. **Setting Up Docker**:
+    - Use `docker run` commands with appropriate flags to configure and run containers.
+    - Troubleshoot port conflicts using `docker ps` and `docker stop` commands.
+2. **Optimizing Data Handling**:
+    - For large datasets, avoid loading everything into memory at once; use iterators.
+    - Save subsets of data for quicker initial exploration.
+3. **Windows-Specific Adjustments**:
+    - Pay attention to path formats and ensure compatibility with Docker.
+4. **SQL Best Practices**:
+    - Define appropriate data types (e.g., `DECIMAL` for monetary values).
+    - Use indexes for faster querying when working with large datasets (covered in later lessons).
+5. **Debugging and Verification**:
+    - Always test connections and data integrity after setup.
+    - Use simple queries like `SELECT 1;` to verify database readiness.
+
+---
+
+### **Next Steps in the Course**
+
+- Learn about Docker Compose to manage multiple Docker containers.
+- Use Airflow for orchestrating data pipelines.
+- Perform advanced SQL queries and integrate with BigQuery for analytics.
+
+---
+---
