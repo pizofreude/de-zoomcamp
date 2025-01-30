@@ -636,3 +636,202 @@ In our case, we use [`http://localhost:8080/`](http://localhost:8080/)
 
 ---
 ---
+
+# [🎥 Putting the ingestion script into Docker](https://youtu.be/B1WwATwf-vY?si=GtyRO4Nyd-OGCWap)
+## **Study Note [DE Zoomcamp 1.2.4 - Dockerizing the Ingestion Script](https://youtu.be/B1WwATwf-vY?si=GtyRO4Nyd-OGCWap)**
+
+## Introduction
+
+This session of the [Data Engineering Zoomcamp](https://github.com/DataTalksClub/data-engineering-zoomcamp) focuses on Dockerizing a data ingestion script. Previously, we covered Docker, running PostgreSQL with Docker, connecting it with pgAdmin using Docker networks, and populating the PostgreSQL database with taxi ride data. This session involves converting a Jupyter Notebook into a Python script and containerizing it with Docker.
+
+---
+
+## **Converting Jupyter Notebook to a Python Script**
+
+1. **Export Notebook to Python Script:**
+    - Use the Jupyter command:
+        
+        ```bash
+        jupyter nbconvert --to=script upload_data.ipynb
+        ```
+        
+    - This converts the notebook into a Python script.
+2. **Cleaning Up the Script:**
+    - Remove unnecessary outputs and inline magic commands.
+    - Move imports to the top of the script.
+    - Rename the script to `ingest_data.py` for clarity. Data ingestion simply means taking data and put it into a database.
+3. **Using `argparse` for Command-line Arguments:**
+    - Import `argparse` to handle user input parameters.
+    - Define required arguments:
+        - `user`, `password`, `host`, `port`, `database`, `table_name`, `csv_url`
+    - Parse these arguments and pass them to the script.
+4. **Downloading and Processing the CSV File:**
+    - Use the `os.system()` command with `wget` to fetch the CSV file:
+        
+        ```python
+        os.system(f"wget {url} -O {csv_name}")
+        
+        ```
+        
+    - Load the CSV into pandas and write it to PostgreSQL.
+
+---
+
+## **Running the Script and Testing**
+
+Since we’ve previously populated the database with `yellow_taxi_data`, we can drop the table to repopulate it using the `ingest_data.py`:
+
+- Drop table: `DROP TABLE yellow_taxi_data;` This deletes the table specified from database.
+1. **Running the Script Manually:**
+    
+    ```bash
+    python ingest_data.py \
+        --user=root --password=root --host=localhost --port=5432 \
+        --database=ny_taxi --table_name=yellow_taxi_trips --csv_url=<file_url>
+    
+    ```
+    
+    - <file_url> :
+        - green taxi [`https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-10.csv.gz`](https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-10.csv.gz)
+        - yellow taxi [`https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz`](https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz)
+        - if both links not working, use python server:
+            
+            `python -m http.server 8000`
+            
+2. **Potential Issues and Fixes:**
+    - Passing passwords in the command line is insecure; consider environment variables.
+    - Ensure the script is executable and correctly parses command-line arguments.
+    - Verify the table creation and data insertion via pgAdmin.
+
+---
+
+## **Dockerizing the Ingestion Script**
+
+Make sure to `docker start <container_id>` for pgAdmin container and Docker Postgres as well as the Docker network via `docker network connect <your_network_name> <container_name>`, given the Docker network was already created previously.
+
+Check Docker network: `docker network ls`
+
+Then connect each container individually, e.g.:
+
+`docker network connect <your_network_name> <container_name1>`
+
+`docker network connect <your_network_name> <container_name2>`
+
+1. **Installing Dependencies in Docker:**
+    - Install necessary Python libraries (`pandas`, `sqlalchemy`, `psycopg2`).
+        - `psycopg2` is the library required to connect to postgres via python.
+    - Ensure `wget` is installed using `apt-get`.
+2. **Creating a Dockerfile:**
+    
+    ```
+    FROM python:3.9
+    
+    RUN apt-get update && apt-get install wget
+    RUN pip install pandas sqlalchemy psycopg2
+    
+    # create a directory called app
+    WORKDIR /app 
+    
+    # copy the pipeline.py file from the current directory to the app directory in the container (target)
+    COPY ingest_data.py ingest_data.py
+    
+    ENTRYPOINT [ "python", "ingest_data.py" ]
+    
+    ```
+    
+3. **Building the Docker Image:**
+    
+    ```bash
+    docker build -t taxi_ingest:v001 .
+    
+    ```
+    
+4. **Running the Container with Arguments:**
+    
+    ```bash
+    URL="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
+    
+    docker run -it \
+      --network=pg-network \
+      taxi_ingest:v001 \
+        --user=root \
+        --password=root \
+        --host=172.19.0.2 \
+        --port=5432 \
+        --db=ny_taxi \
+        --table_name=yellow_taxi_trips \
+        --url=${URL}
+        
+        
+        OR
+        
+    URL="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
+    
+    docker run -it \
+      --network=pg-network \
+      taxi_ingest:v001 \
+        --user=root \
+        --password=root \
+        --host=pg-database \
+        --port=5432 \
+        --db=ny_taxi \
+        --table_name=yellow_taxi_trips \
+        --url=${URL}
+    ```
+    
+    p/s: Somehow pg-database doesn’t work for me as host name/address, so I set it to the host address instead and bob’s your uncle!
+    
+
+---
+
+## **Handling Docker Networking Issues**
+
+- **Localhost Issue:** Containers run in isolation; `localhost` for a container refers to itself.
+- **Solution:** Connect containers using Docker networks:
+    
+    ```bash
+    docker network create pg_network
+    docker run --network=pg_network --name postgres_container -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres
+    
+    ```
+    
+- **Container Killing Issues:** If a container does not stop with `Ctrl+C`, use:
+    
+    ```bash
+    docker ps
+    docker kill <container_id>
+    
+    ```
+    
+- Connection failed:
+    
+    `connection failed: connection to server at "172.19.0.3", port 5432 failed: Connection refused Is the server running on that host and accepting TCP/IP connections?`
+    
+    This is normally due to wrong **Host name/address**: `172.19.0.2` e.g. `172.19.0.3`
+    
+
+---
+
+## **Improving CSV Download Speed**
+
+- Instead of downloading from the internet, serve the file locally using Python:
+    
+    ```bash
+    python -m http.server 8000
+    
+    ```
+    
+- Find your local IP address using `ifconfig` (Linux) or `ipconfig` (Windows) and use that IP instead of `localhost`.
+
+---
+
+## **Final Verification in pgAdmin**
+
+- Refresh pgAdmin to check if the `yellow_taxi_trips` table is populated.
+- Verify successful ingestion.
+
+---
+
+## **Next Steps: Docker Compose**
+
+- The next session will introduce **Docker Compose** to manage multiple services together in a configuration file.
