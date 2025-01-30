@@ -44,7 +44,10 @@
    - Skills from the course are applicable in various fields, including ML and analytics.  
    - Data engineering remains in demand, and foundational knowledge from the course supports further specialization in tools like AWS, GCP, or Azure.
 
-## Introduction - Self-Study Notes
+---
+---
+
+# [Introduction](https://www.youtube.com/live/AtRhA-NfS24?si=C0M1oDPeX8KWeggJ) - Self-Study Notes
 
 ## Overview
 
@@ -74,7 +77,7 @@
   - Simplify scripts created in Week 1.
   - Convert CSV files to Parquet format and upload to Google Cloud Storage.
 - **Notes**:
-  - The NYC Taxi and Limousine Commission dataset was used as an example.
+  - The [NYC Taxi and Limousine Commission](https://github.com/DataTalksClub/nyc-tlc-data) dataset was used as an example.
 
 ### Week 3: Data Warehousing
 - **Tool**: Google BigQuery.
@@ -175,3 +178,149 @@
 By following this structured approach, we can maximize our learning experience in the Data Engineering Zoomcamp 2025 Cohort.
 
 Good luck everyone!
+
+---
+---
+
+
+# Docker + Postgres
+
+## 🎥 [Introduction to Docker](https://youtu.be/EYNwNlOrpr0?si=we50KI-9J_3oYEhw)
+
+## Study Notes: DE Zoomcamp 1.2.1 - Introduction to Docker
+
+### Overview
+
+- **Topic:** Introduction to Docker and its importance for data engineers.
+- **Purpose:** Learn the basics of Docker, including its use cases, advantages, and practical setup for data engineering tasks such as running databases and pipelines.
+
+---
+
+### Key Concepts
+
+1. **What is Docker?**
+    - A platform for delivering software in isolated environments called **containers**.
+    - Containers ensure **isolation** and portability, making it easier to run applications without interfering with the host system or other containers.
+2. **Why Docker for Data Engineers?**
+    - **Reproducibility:** Ensures consistent environments across different systems.
+    - **Local experiments and testing:** Quickly set up and run tools like PostgreSQL without installing them on the host system.
+    - **Integration tests (CI/CD):** Simulate real-world scenarios by connecting components like data pipelines and databases in isolated environments.
+    - **Cloud readiness:** Docker images can be deployed to cloud environments (e.g., Kubernetes, AWS Batch) for scalable execution.
+
+---
+
+### Practical Examples and Workflow
+
+1. **Docker for Running PostgreSQL**
+    - A PostgreSQL database can run inside a container, eliminating the need to install it on the host system.
+    - Multiple containers can run different database instances without conflicts.
+    - Tools like **pgAdmin** can also run in containers for database management and SQL query execution.
+        
+        ![1-container.png](/course_notes/images/01-docker-terraform/1.2.1/1-container.png)
+        
+2. **Data Pipelines in Docker**
+    - Example pipeline: A Python script that processes data from a CSV file, performs transformations using **pandas**, and outputs results to PostgreSQL.
+    - Dependencies (Python version, libraries) are included in the container to ensure consistency.
+        
+        ![2-pipeline.png](/course_notes/images/01-docker-terraform/1.2.1/2-pipeline.png)
+        
+3. **Isolation and Reproducibility**
+    - Containers can be reset to their original state after each use.
+    - Docker images can be shared, ensuring the same environment is used regardless of the platform.
+        
+        ![3-reproducibility.png](/course_notes/images/01-docker-terraform/1.2.1/3-reproducibility.png)
+        
+
+---
+
+### Key Docker Commands and Concepts
+
+1. **Basic Commands**
+    - `docker run [image-name]`: Runs a container based on the specified image.
+    - `docker build -t [tag-name] .`: Builds a Docker image from a Dockerfile.
+    - `docker exec -it [container-id] bash`: Access the container's terminal.
+    - `docker stop [container-id]`: Stops a running container.
+2. **Images and Containers**
+    - **Image:** A template containing instructions to create a container.
+    - **Container:** A running instance of an image.
+3. **Dockerfile**
+    - A file containing instructions to build a custom Docker image.
+    - Common commands in Dockerfile:
+        - `FROM [base-image]`: Specifies the base image (e.g., `python:3.9`).
+        - `RUN [command]`: Executes commands (e.g., `RUN pip install pandas`).
+        - `ENTRYPOINT`: Defines the default command executed when a container starts.
+        - `WORKDIR`: Sets the working directory inside the container.
+
+---
+
+### Practical Demonstrations
+
+1. **Running a Container**
+    - Run a test image: `docker run hello-world`.
+    - Run an Ubuntu image interactively: `docker run -it ubuntu bash`. `it` means interactive.
+2. **Installing Python Dependencies in a Container**
+    - Start a Python container: `docker run -it python:3.9 bash`.
+    - Install pandas: `pip install pandas`. To install python library in a docker container, use this command: `docker run -it --entrypoint=bash python: 3.9` which will run the entry point inside bash to run pip install command.
+    - Run Python commands within the container.
+    - Note: Changes made in the container (e.g., installed packages) are lost after the container stops.
+3. **Creating a Custom Docker Image**
+    - Example Dockerfile for a data pipeline:
+        
+        ```docker
+        FROM python:3.9
+        RUN pip install pandas
+        WORKDIR /app
+        COPY pipeline.py /app/
+        ENTRYPOINT ["python", "pipeline.py"]
+        
+        ```
+        
+    - Build the image from a Dockerfile: `docker build -t pipeline-image .`
+        - `-t` = tag
+        - `pipeline-image` = tag name
+        - `.` = build the docker image in current directory
+        - In the Docker command `docker build -t test:pandas .`, the colon `:` is used to tag the image being built. Specifically:
+            - `test` is the name of the image.
+            - `pandas` is the tag for that image.
+        
+        Tags are useful to differentiate between versions or variations of the same image. So, in this case, `test:pandas` might indicate a specific version of the `test` image that includes pandas (a Python library for data manipulation and analysis).
+        
+        The `.` at the end specifies the current directory as the build context, meaning Docker will use the contents of the current directory to build the image.
+        
+    - Run the container: `docker run pipeline-image`.
+        - `docker run -it test:pandas 2025-01-27` let us runs the image at specified date.
+        - `docker run -it test:pandas 2025-01-27 param1 param2` let us runs the image at specified date with various parameters.
+4. **Parameterizing the Pipeline**
+    - Pass arguments to the script using command-line parameters.
+    - Example: `docker run pipeline-image arg1 arg2`.
+    - Access parameters in Python using `sys.argv`.
+
+---
+
+### Advantages of Docker
+
+1. **Portability:** Run the same container in local, cloud, or CI/CD environments.
+2. **Consistency:** Eliminates the "works on my machine" problem.
+3. **Isolation:** Prevents interference between different applications or services.
+4. **Scalability:** Easily deploy containers in distributed systems like Kubernetes.
+
+---
+
+### Recommendations for Beginners
+
+1. **Tools for Development:**
+    - Use **Visual Studio Code** or similar editors for editing files.
+    - On Windows, use **Git Bash** or **Windows Subsystem for Linux (WSL)** for a Linux-like terminal experience.
+2. **Learning Resources:**
+    - Experiment with basic Docker commands.
+    - Practice building and running custom images.
+    - Explore Docker Hub for prebuilt images.
+    - Look into CI/CD tools like GitHub Actions for automation.
+
+---
+
+### Next Steps
+
+- Apply Docker to run PostgreSQL and practice SQL.
+- Build and test data pipelines using Docker containers.
+- Explore deploying containers to cloud platforms for scalable execution.
