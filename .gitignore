@@ -172,3 +172,6 @@ cython_debug/
 
 # DE Zoomcamp stuff
 ny_taxi_postgres_data/
+postgresql.conf
+yellow_tripdata_2021-01.csv
+taxi_zone_lookup.csv
