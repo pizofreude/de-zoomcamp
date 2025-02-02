@@ -835,3 +835,177 @@ Then connect each container individually, e.g.:
 ## **Next Steps: Docker Compose**
 
 - The next session will introduce **Docker Compose** to manage multiple services together in a configuration file.
+
+---
+---
+
+# Study Notes 1.2.5: Running PostgreSQL and pgAdmin with Docker-Compose
+
+## **1. Introduction**
+
+- This [video](https://youtu.be/hKI6PkPhpa0?si=BwSS50JoFXaMsy_9) continues the Data Engineering Zoomcamp series, focusing on Docker and SQL.
+- Previous lessons covered packaging an ingestion script into a Docker container.
+- This lesson builds on that by running PostgreSQL and pgAdmin using Docker Compose instead of separate Docker commands.
+
+## **2. Challenges with Running PostgreSQL and pgAdmin Separately**
+
+- Previously, PostgreSQL and pgAdmin were run in one network using two Docker commands.
+- Manually configuring each container is cumbersome and requires multiple command-line arguments.
+- A more convenient approach is to define configurations in a single YAML file using Docker Compose.
+
+## **3. What is Docker Compose?**
+
+- Docker Compose is a utility that allows defining multi-container configurations in a YAML file.
+- It simplifies the process by allowing multiple services to be launched with a single command.
+- Containers in the `docker-compose.yaml` file automatically belong to the same network.
+
+## **4. Installing Docker Compose**
+
+- **Mac/Windows:** Comes pre-installed with Docker Desktop.
+- **Linux:** Needs to be downloaded separately and placed in the system path.
+
+## **5. Creating the `docker-compose.yaml` File**
+
+- Defines two services: PostgreSQL (`pg_database`) and pgAdmin (`pg_admin`).
+- Optional version specification; if omitted, the oldest version is used by default.
+- Services include environment variables, volume mapping, and port configurations.
+
+### **5.1 PostgreSQL Service (`pg_database`)**
+
+- Specifies the PostgreSQL image (`postgres:13`).
+- Defines necessary environment variables:
+    
+    ```yaml
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ny_taxi
+    
+    ```
+    
+- Volume mapping is used to persist data:
+In docker-compose we don’t need to specify the full path
+    
+    ```yaml
+    volumes:
+      - ./ny_taxi:/var/lib/postgresql/data
+    
+    ```
+    
+- Port mapping:
+    
+    ```yaml
+    ports:
+      - "5432:5432"
+    
+    ```
+    
+
+### **5.2 pgAdmin Service (`pg_admin`)**
+
+- Uses the pgAdmin image.
+- Defines environment variables:
+    
+    ```yaml
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    
+    ```
+    
+- Maps port 8080 on the host to port 80 inside the container:
+    
+    ```yaml
+    ports:
+      - "8080:80"
+    
+    ```
+    
+- Volume mapping is not configured initially.
+
+Since we defined both services `pgdatabase` and `pgadmin` in Docker-compose, we don’t have to create docker network manually since it will be auto-completed.
+
+## **6. Running Services with Docker Compose**
+
+### **6.1 Starting Services**
+
+- First, stop any running PostgreSQL and pgAdmin containers:
+    
+    ```bash
+    docker stop <container_id>
+    ```
+    
+- Check for running containers:
+    
+    ```bash
+    docker ps
+    ```
+    
+- Start services with Docker Compose:
+    
+    ```bash
+    docker-compose up
+    ```
+    
+- This creates and runs PostgreSQL and pgAdmin, making them accessible.
+
+### **6.2 Accessing Services**
+
+- Open a web browser and go to `http://localhost:8080` to access pgAdmin.
+- Use the defined credentials (`admin@admin.com`, `root`) to log in.
+- Add a new connection:
+    - Hostname: `pg_database`
+    - Username: `root`
+    - Password: `root`
+- Verify that the database is accessible and contains the `ny_taxi` dataset.
+
+### **6.3 Stopping Services**
+
+- Use `Ctrl + C` to stop services.
+- Alternatively, shut down services properly using:
+    
+    ```bash
+    docker-compose down
+    ```
+    
+
+### **6.4 Running in Detached Mode**
+
+- Run in detached mode (`d`) to keep services running in the background:
+    
+    ```bash
+    docker-compose up -d
+    
+    ```
+    
+- This allows using the terminal without keeping it occupied.
+- Shut down services when needed using:
+    
+    ```bash
+    docker-compose down
+    ```
+    
+
+## **7. Benefits of Using Docker Compose**
+
+- Eliminates long and complex `docker run` commands.
+- Ensures services are automatically networked.
+- Simplifies local development and integration testing.
+- Makes managing multi-container applications easier.
+
+## **8. Next Steps**
+
+- Now that PostgreSQL is set up with data ingestion, the next step is to write SQL queries.
+- Future lessons will cover SQL queries and data manipulation within PostgreSQL.
+
+---
+
+**Summary:**
+
+- Docker Compose simplifies running multiple containers with a single YAML configuration file.
+- PostgreSQL and pgAdmin can be easily set up and managed using `docker-compose.yaml`.
+- Using detached mode (`d`) allows keeping services running in the background.
+- This setup is useful for local development and testing before deploying services in production.
+
+---
+---
