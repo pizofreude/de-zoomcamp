@@ -178,3 +178,4 @@ taxi_zone_lookup.csv
 
 # Kestra stuff
 04_gcp_kv.yaml
+02_workflow_orchestration/flows/04_gcp_kv.yaml
