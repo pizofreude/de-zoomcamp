@@ -175,6 +175,7 @@ ny_taxi_postgres_data/
 postgresql.conf
 yellow_tripdata_2021-01.csv
 taxi_zone_lookup.csv
+*.parquet
 
 # Kestra stuff
 04_gcp_kv.yaml
