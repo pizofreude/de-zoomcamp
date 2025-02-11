@@ -6,7 +6,7 @@ from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 import time
 
 # Change this to your bucket name
-BUCKET_NAME = "your_s3_bucket_name"
+BUCKET_NAME = "dezoomcamp-kestra-bucket-01"
 
 BASE_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-"
 MONTHS = [f"{i:02d}" for i in range(1, 7)]
