@@ -16,6 +16,13 @@ Nothing is fool proof so make sure that all 6 files show in your GCS Bucket befo
 
 <u>NOTE:</u> You will need to use the PARQUET option files when creating an External Table</br>
 
+<b>S3
+ SETUP:</b></br>
+Upload dataset via `python load_yellow_taxi_data_s3.py `. </br>
+Prerequisite: `pip install -r requirements.txt` </br>
+</p>
+
+
 <b>ATHENA SETUP:</b></br>
 Create an external table using the Yellow Taxi Trip Records. </br>
 Create a (regular/materialized) table in BQ using the Yellow Taxi Trip Records (do not partition or cluster this table). </br>
