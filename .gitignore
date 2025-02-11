@@ -180,3 +180,6 @@ taxi_zone_lookup.csv
 04_gcp_kv.yaml
 02_workflow_orchestration/flows/04_gcp_kv.yaml
 02_workflow_orchestration/flows/04_gcp_kv.yaml
+
+# Environment variables
+set_env.sh
