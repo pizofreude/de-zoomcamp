@@ -1,4 +1,4 @@
-id: 02_postgres_taxi_scheduled
+id: 02_postgres_taxi_fhv_scheduled
 namespace: dezoomcamp
 description: |
   Best to add a label `backfill:true` from the UI to track executions created via a backfill.
@@ -249,7 +249,88 @@ tasks:
               S.trip_distance, S.fare_amount, S.extra, S.mta_tax, S.tip_amount, S.tolls_amount, S.ehail_fee,
               S.improvement_surcharge, S.total_amount, S.payment_type, S.trip_type, S.congestion_surcharge
             );
-  
+
+  - id: if_fhv_taxi
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{inputs.taxi == 'fhv'}}"
+    then:
+      - id: fhv_create_table
+        type: io.kestra.plugin.jdbc.postgresql.Queries
+        sql: |
+          CREATE TABLE IF NOT EXISTS {{render(vars.table)}} (
+              unique_row_id          text,
+              filename               text,
+              dispatching_base_num   text,
+              pickup_datetime        timestamp,
+              dropOff_datetime       timestamp,
+              PUlocationID           text,
+              DOlocationID           text,
+              SR_Flag                text,
+              Affiliated_base_number text
+          );
+
+      - id: fhv_create_staging_table
+        type: io.kestra.plugin.jdbc.postgresql.Queries
+        sql: |
+          CREATE TABLE IF NOT EXISTS {{render(vars.staging_table)}} (
+              unique_row_id          text,
+              filename               text,
+              dispatching_base_num   text,
+              pickup_datetime        timestamp,
+              dropOff_datetime       timestamp,
+              PUlocationID           text,
+              DOlocationID           text,
+              SR_Flag                text,
+              Affiliated_base_number text
+          );
+
+      - id: fhv_truncate_staging_table
+        type: io.kestra.plugin.jdbc.postgresql.Queries
+        sql: |
+          TRUNCATE TABLE {{render(vars.staging_table)}};
+
+      - id: fhv_copy_in_to_staging_table
+        type: io.kestra.plugin.jdbc.postgresql.CopyIn
+        format: CSV
+        from: "{{render(vars.data)}}"
+        table: "{{render(vars.staging_table)}}"
+        header: true
+        columns: [dispatching_base_num,pickup_datetime,dropOff_datetime,PUlocationID,DOlocationID,SR_Flag,Affiliated_base_number]
+
+      - id: fhv_add_unique_id_and_filename
+        type: io.kestra.plugin.jdbc.postgresql.Queries
+        sql: |
+          UPDATE {{render(vars.staging_table)}}
+          SET 
+            unique_row_id = md5(
+              COALESCE(CAST(dispatching_base_num AS text), '') ||
+              COALESCE(CAST(pickup_datetime AS text), '') || 
+              COALESCE(CAST(dropOff_datetime AS text), '') || 
+              COALESCE(PUlocationID, '') || 
+              COALESCE(DOlocationID, '') || 
+              COALESCE(CAST(Affiliated_base_number AS text), '')      
+            ),
+            filename = '{{render(vars.file)}}';
+
+      - id: fhv_merge_data
+        type: io.kestra.plugin.jdbc.postgresql.Queries
+        sql: |
+          MERGE INTO {{render(vars.table)}} AS T
+          USING {{render(vars.staging_table)}} AS S
+          ON T.unique_row_id = S.unique_row_id
+          WHEN NOT MATCHED THEN
+            INSERT (
+              unique_row_id, filename, dispatching_base_num, pickup_datetime, dropOff_datetime,
+              PUlocationID, DOlocationID, SR_Flag,
+              Affiliated_base_number
+            )
+            VALUES (
+              S.unique_row_id, S.filename, S.dispatching_base_num, S.pickup_datetime, S.dropOff_datetime,
+              S.PUlocationID, S.DOlocationID, S.SR_Flag,
+              S.Affiliated_base_number
+            );
+
+
   - id: purge_files
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
     description: To avoid cluttering your storage, we will remove the downloaded files
