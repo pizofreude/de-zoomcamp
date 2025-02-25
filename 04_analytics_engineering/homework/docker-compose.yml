@@ -110,7 +110,7 @@ services:
       MB_DB_PORT: 5432
       MB_DB_USER: postgres
       MB_DB_PASS: postgres
-      MB_DB_HOST: postgres
+      MB_DB_HOST: postgres  # Updated to match your Postgres container name
     depends_on:
       postgres:
         condition: service_healthy
