@@ -61,7 +61,7 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    container_name: postgres
+    container_name: postgres_dbt
     environment:
       POSTGRES_USER: 'postgres'
       POSTGRES_PASSWORD: 'postgres'
@@ -110,7 +110,7 @@ services:
       MB_DB_PORT: 5432
       MB_DB_USER: postgres
       MB_DB_PASS: postgres
-      MB_DB_HOST: postgres  # Updated to match your Postgres container name
+      MB_DB_HOST: postgres_dbt  # Updated to match your Postgres container name
     depends_on:
       postgres:
         condition: service_healthy
