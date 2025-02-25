@@ -11,7 +11,7 @@ inputs:
   - id: taxi
     type: SELECT
     displayName: Select taxi type
-    values: [yellow, green, fhv]
+    values: [yellow, green, fhv] # add fhv to the list if you want to backfill fhv data
     defaults: yellow
 
 variables:
