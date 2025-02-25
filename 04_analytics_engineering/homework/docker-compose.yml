@@ -119,9 +119,13 @@ services:
 volumes:
   vol-pgdata:
     name: vol-pgdata
+    external: true
   vol-pgadmin_data:
     name: vol-pgadmin_data
+    external: true
   vol-kestra-metadata:
     name: vol-kestra-metadata
+    external: true
   vol-kestra-data:
     name: vol-kestra-data
+    external: true
