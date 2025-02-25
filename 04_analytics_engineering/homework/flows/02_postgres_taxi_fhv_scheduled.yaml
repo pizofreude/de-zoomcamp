@@ -354,3 +354,9 @@ triggers:
     cron: "0 10 1 * *"
     inputs:
       taxi: yellow
+
+  - id: fhv_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 11 1 * *"
+    inputs:
+      taxi: fhv
