@@ -184,3 +184,6 @@ taxi_zone_lookup.csv
 
 # Environment variables
 set_env.sh
+
+# VS Code Stuff
+.vscode/
