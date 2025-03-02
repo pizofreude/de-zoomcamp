@@ -31,6 +31,50 @@ This repository contains all the materials and code developed during the Data En
 - **Pandas**: For data analysis and manipulation.
 - **SQLAlchemy**: For database interaction.
 
+
+## **Modules**
+
+### [Module 1: Containerization and Infrastructure as Code](01_intro_to_data_engineering/)
+- Introduction to GCP
+- Docker and Docker Compose
+- Running PostgreSQL with Docker
+- Infrastructure setup with Terraform
+- Homework
+
+### [Module 2: Workflow Orchestration](02_workflow_orchestration/)
+- Data Lakes and Workflow Orchestration
+- Workflow orchestration with Kestra
+- Homework
+
+### [Workshop 1: Data Ingestion](workshop/dlt/)
+- API reading and pipeline scalability
+- Data normalization and incremental loading
+- Homework
+
+### [Module 3: Data Warehousing](03_data_warehousing/)
+- Introduction to BigQuery
+- Partitioning, clustering, and best practices
+- Machine learning in BigQuery
+
+### [Module 4: Analytics Engineering](04_analytics_engineering/)
+- dbt (data build tool) with PostgreSQL & BigQuery
+- Testing, documentation, and deployment
+- Data visualization with Metabase
+
+### [Module 5: Batch Processing](05_batch_processing/)
+- Introduction to Apache Spark
+- DataFrames and SQL
+- Internals of GroupBy and Joins
+
+### [Module 6: Streaming](06_streaming/)
+- Introduction to Kafka
+- Kafka Streams and KSQL
+- Schema management with Avro
+
+### [Final Project](projects/)
+- Apply all concepts learned in a real-world scenario
+- Peer review and feedback process
+
 ## Resources
 * [Data Engineering Zoomcamp](https://github.com/DataTalksClub/data-engineering-zoomcamp)
 * [Datatalks.Club](https://datatalks.club/)
