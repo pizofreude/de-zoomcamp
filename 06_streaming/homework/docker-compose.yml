@@ -32,6 +32,7 @@ services:
       - 28082:28082
       - 29092:29092
 
+# Flink job manager via PyFlink
   jobmanager:
     build:
       context: .
@@ -62,7 +63,7 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager        
   
-  # Flink task manager
+  # Flink task manager via PyFlink
   taskmanager:
     image: pyflink:1.16.0
     container_name: "flink-taskmanager"
