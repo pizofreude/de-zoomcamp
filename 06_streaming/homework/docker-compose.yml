@@ -33,6 +33,8 @@ services:
       - 29092:29092
 
 # Flink job manager via PyFlink
+# distributed processing framework for both stream and batch data processing
+# Excels in stateful processing, windowing, and fault tolerance.
   jobmanager:
     build:
       context: .
@@ -64,6 +66,8 @@ services:
         jobmanager.rpc.address: jobmanager        
   
   # Flink task manager via PyFlink
+  # distributed processing framework for both stream and batch data processing
+  # Excels in stateful processing, windowing, and fault tolerance.
   taskmanager:
     image: pyflink:1.16.0
     container_name: "flink-taskmanager"
@@ -87,6 +91,8 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 15
         parallelism.default: 3
+
+# Postgres as sink destination
   postgres:
     image: postgres:14
     restart: on-failure
