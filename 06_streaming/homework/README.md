@@ -1,186 +1,108 @@
-# Homework
+# Apache Flink Training
+Apache Flink Streaming Pipelines
 
-In this homework, we're going to learn about streaming with PyFlink.
+## :pushpin: Getting started 
 
-Instead of Kafka, we will use Red Panda, which is a drop-in
-replacement for Kafka. It implements the same interface, 
-so we can use the Kafka library for Python for communicating
-with it, as well as use the Kafka connector in PyFlink.
+### :whale: Installations
 
-For this homework we will be using the Taxi data:
-- Green 2019-10 data from [here](https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-10.csv.gz)
+To run this repo, the following components will need to be installed:
 
+1. [Docker](https://docs.docker.com/get-docker/) (required)
+2. [Docker compose](https://docs.docker.com/compose/install/#installation-scenarios) (required)
+3. Make (recommended) -- see below
+    - On most Linux distributions and macOS, `make` is typically pre-installed by default. To check if `make` is installed on your system, you can run the `make --version` command in your terminal or command prompt. If it's installed, it will display the version information. 
+    - Otherwise, you can try following the instructions below, or you can just copy+paste the commands from the `Makefile` into your terminal or command prompt and run manually.
 
-## Setup
+        ```bash
+        # On Ubuntu or Debian:
+        sudo apt-get update
+        sudo apt-get install build-essential
 
-We need:
+        # On CentOS or Fedora:
+        sudo dnf install make
 
-- Red Panda
-- Flink Job Manager
-- Flink Task Manager
-- Postgres
+        # On macOS:
+        xcode-select --install
 
-It's the same setup as in the [pyflink module](../../../06-streaming/pyflink/), so go there and start docker-compose:
+        # On windows:
+        choco install make # uses Chocolatey, https://chocolatey.org/install
+        ```
 
-```bash
-cd ../../../06-streaming/pyflink/
-docker-compose up
-```
+### :computer: Local setup
 
-(Add `-d` if you want to run in detached mode)
-
-Visit http://localhost:8081 to see the Flink Job Manager
-
-Connect to Postgres with pgcli, pg-admin, [DBeaver](https://dbeaver.io/) or any other tool.
-
-The connection credentials are:
-
-- Username `postgres`
-- Password `postgres`
-- Database `postgres`
-- Host `localhost`
-- Port `5432`
-
-With pgcli, you'll need to run this to connect:
+Make sure you're in the `pyflick` folder:
 
 ```bash
-pgcli -h localhost -p 5432 -u postgres -d postgres
+cd 06-streaming/pyflink
 ```
 
-Run these query to create the Postgres landing zone for the first events and windows:
+## :boom: Running the pipeline
 
-```sql 
-CREATE TABLE processed_events (
-    test_data INTEGER,
-    event_timestamp TIMESTAMP
-);
+1. Build the Docker image and deploy the services in the `docker-compose.yml` file, including the PostgreSQL database and Flink cluster. This will (should) also create the sink table, `processed_events`, where Flink will write the Kafka messages to.
 
-CREATE TABLE processed_events_aggregated (
-    event_hour TIMESTAMP,
-    test_data INTEGER,
-    num_hits INTEGER 
-);
-```
+    ```bash
+    make up
 
-## Question 1: Redpanda version
+    #// if you dont have make, you can run:
+    # docker compose up --build --remove-orphans  -d
+    ```
 
-Now let's find out the version of redpandas. 
+    **:star: Wait until the Flink UI is running at [http://localhost:8081/](http://localhost:8081/) before proceeding to the next step.** _Note the first time you build the Docker image it can take anywhere from 5 to 30 minutes. Future builds should only take a few second, assuming you haven't deleted the image since._
 
-For that, check the output of the command `rpk help` _inside the container_. The name of the container is `redpanda-1`.
+    :information_source: After the image is built, Docker will automatically start up the job manager and task manager services. This will take a minute or so. Check the container logs in Docker desktop and when you see the line below, you know you're good to move onto the next step.
 
-Find out what you need to execute based on the `help` output.
+    ```
+    taskmanager Successful registration at resource manager akka.tcp://flink@jobmanager:6123/user/rpc/resourcemanager_* under registration id <id_number>
+    ```
 
-What's the version, based on the output of the command you executed? (copy the entire version)
+2. Now that the Flink cluster is up and running, it's time to finally run the PyFlink job! :smile:
 
+    ```bash
+    make job
 
-## Question 2. Creating a topic
+    #// if you dont have make, you can run:
+    # docker-compose exec jobmanager ./bin/flink run -py /opt/job/start_job.py -d
+    ```
 
-Before we can send data to the redpanda server, we
-need to create a topic. We do it also with the `rpk`
-command we used previously for figuring out the version of 
-redpandas.
-
-Read the output of `help` and based on it, create a topic with name `green-trips` 
-
-What's the output of the command for creating a topic? Include the entire output in your answer.
+    After about a minute, you should see a prompt that the job's been submitted (e.g., `Job has been submitted with JobID <job_id_number>`). Now go back to the [Flink UI](http://localhost:8081/#/job/running) to see the job running! :tada:
 
 
-## Question 3. Connecting to the Kafka server
+3. When you're done, you can stop and/or clean up the Docker resources by running the commands below.
 
-We need to make sure we can connect to the server, so
-later we can send some data to its topics
+    ```bash
+    make stop # to stop running services in docker compose
+    make down # to stop and remove docker compose services
+    make clean # to remove the docker container and dangling images
+    ```
 
-First, let's install the kafka connector (up to you if you
-want to have a separate virtual environment for that)
+    :grey_exclamation: Note the `/var/lib/postgresql/data` directory inside the PostgreSQL container is mounted to the `./postgres-data` directory on your local machine. This means the data will persist across container restarts or removals, so even if you stop/remove the container, you won't lose any data written within the container.
+
+------
+
+:information_source: To see all the make commands that're available and what they do, run:
 
 ```bash
-pip install kafka-python
+make help
 ```
 
-You can start a jupyter notebook in your solution folder or
-create a script
+As of the time of writing this, the available commands are:
 
-Let's try to connect to our server:
+```bash
 
-```python
-import json
+Usage:
+  make <target>
 
-from kafka import KafkaProducer
-
-def json_serializer(data):
-    return json.dumps(data).encode('utf-8')
-
-server = 'localhost:9092'
-
-producer = KafkaProducer(
-    bootstrap_servers=[server],
-    value_serializer=json_serializer
-)
-
-producer.bootstrap_connected()
+Targets:
+  help                 Show help with `make help`
+  db-init              Builds and runs the PostgreSQL database service
+  build                Builds the Flink base image with pyFlink and connectors installed
+  up                   Builds the base Docker image and starts Flink cluster
+  down                 Shuts down the Flink cluster
+  job                  Submit the Flink job
+  stop                 Stops all services in Docker compose
+  start                Starts all services in Docker compose
+  clean                Stops and removes the Docker container as well as images with tag `<none>`
+  psql                 Runs psql to query containerized postgreSQL database in CLI
+  postgres-die-mac     Removes mounted postgres data dir on local machine (mac users) and in Docker
+  postgres-die-pc      Removes mounted postgres data dir on local machine (PC users) and in Docker
 ```
-
-Provided that you can connect to the server, what's the output
-of the last command?
-
-## Question 4: Sending the Trip Data
-
-Now we need to send the data to the `green-trips` topic
-
-Read the data, and keep only these columns:
-
-* `'lpep_pickup_datetime',`
-* `'lpep_dropoff_datetime',`
-* `'PULocationID',`
-* `'DOLocationID',`
-* `'passenger_count',`
-* `'trip_distance',`
-* `'tip_amount'`
-
-Now send all the data using this code:
-
-```python
-producer.send(topic_name, value=message)
-```
-
-For each row (`message`) in the dataset. In this case, `message`
-is a dictionary.
-
-After sending all the messages, flush the data:
-
-```python
-producer.flush()
-```
-
-Use `from time import time` to see the total time 
-
-```python
-from time import time
-
-t0 = time()
-
-# ... your code
-
-t1 = time()
-took = t1 - t0
-```
-
-How much time did it take to send the entire dataset and flush? 
-
-
-## Question 5: Build a Sessionization Window (2 points)
-
-Now we have the data in the Kafka stream. It's time to process it.
-
-* Copy `aggregation_job.py` and rename it to `session_job.py`
-* Have it read from `green-trips` fixing the schema
-* Use a [session window](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/operators/windows/) with a gap of 5 minutes
-* Use `lpep_dropoff_datetime` time as your watermark with a 5 second tolerance
-* Which pickup and drop off locations have the longest unbroken streak of taxi trips?
-
-
-## Submitting the solutions
-
-- Form for submitting: https://courses.datatalks.club/de-zoomcamp-2025/homework/hw6
-- Deadline: See the website
-
