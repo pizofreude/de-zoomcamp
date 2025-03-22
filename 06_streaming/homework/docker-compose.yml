@@ -95,7 +95,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     extra_hosts:
      - "host.docker.internal:127.0.0.1" #// Linux
      - "host.docker.internal:host-gateway" #// Access services on the host machine from within the Docker container
