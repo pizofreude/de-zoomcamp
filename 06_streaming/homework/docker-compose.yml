@@ -96,7 +96,7 @@ services:
   postgres:
     image: postgres:14
     restart: on-failure
-    container_name: "postgres"
+    container_name: "postgres2"
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
