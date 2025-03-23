@@ -112,7 +112,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: on-failure
 
 # Tool for managing PostgreSQL databases
 # Alternatives to pgAdmin are: DBeaver, DataGrip, and TablePlus
