@@ -117,9 +117,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: "pgadmin@pgadmin.com"
       PGADMIN_DEFAULT_PASSWORD: "pgadmin"
     ports:
-      - "9000:80"
-    volumes:
-      - vol-pgadmin_data:/var/lib/pgadmin  
+      - "9000:80" 
     depends_on:
       postgres:
         condition: service_healthy
