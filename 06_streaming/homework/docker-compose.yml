@@ -1,4 +1,5 @@
-version: "3.9"
+# The attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+# version: "3.9"
 services:
   redpanda-1:
     image: redpandadata/redpanda:v24.2.18
@@ -106,4 +107,27 @@ services:
     extra_hosts:
      - "host.docker.internal:127.0.0.1" #// Linux
      - "host.docker.internal:host-gateway" #// Access services on the host machine from within the Docker container
+
+# Tool for managing PostgreSQL databases
+# Alternatives to pgAdmin are: DBeaver, DataGrip, and TablePlus
+  pgadmin3:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin3
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "pgadmin@pgadmin.com"
+      PGADMIN_DEFAULT_PASSWORD: "pgadmin"
+    ports:
+      - "9000:80"
+    volumes:
+      - vol-pgadmin_data:/var/lib/pgadmin  
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:80/ || exit 1"]
+      start_period: 10s
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    restart: on-failure:5
 
