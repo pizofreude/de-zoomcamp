@@ -107,6 +107,12 @@ services:
     extra_hosts:
      - "host.docker.internal:127.0.0.1" #// Linux
      - "host.docker.internal:host-gateway" #// Access services on the host machine from within the Docker container
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
 
 # Tool for managing PostgreSQL databases
 # Alternatives to pgAdmin are: DBeaver, DataGrip, and TablePlus
