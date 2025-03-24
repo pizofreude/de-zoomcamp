@@ -231,7 +231,7 @@ $ python src/producers/load_taxi_data.py
 [SUCCESS] All data successfully sent to Kafka topic 'green-trips' in 92 seconds.
 ```
 
-The script took 62 seconds to send the entire dataset and flush.
+The script took 92 seconds to send the entire dataset and flush.
 
 
 ## Question 5: Build a Sessionization Window (2 points)
@@ -283,7 +283,7 @@ C:\workspace\de-zoomcamp\06_streaming\homework>docker compose exec jobmanager ./
 Job has been submitted with JobID 9bbe970a646a9fb4e68612b633bf32f5
 ```
 
-Thee job ran successfully in the Flink Job Manager. But no dataa was written to the Postgres database.
+The job ran successfully in the Flink Job Manager. But no data was written to the Postgres database.
 
 So we reran the load_taxi_data.py script to send the data to the Kafka topic:
 
