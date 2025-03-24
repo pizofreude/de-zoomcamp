@@ -228,7 +228,7 @@ $ python src/producers/load_taxi_data.py
 [INFO] Starting to process the compressed CSV file: data/green_tripdata_2019-10.csv.gz
 [INFO] Successfully processed 476386 rows from the compressed CSV file.
 [INFO] Flushing messages to Kafka...
-[SUCCESS] All data successfully sent to Kafka topic 'green-trips' in 62 seconds.
+[SUCCESS] All data successfully sent to Kafka topic 'green-trips' in 92 seconds.
 ```
 
 The script took 62 seconds to send the entire dataset and flush.
