@@ -12,7 +12,7 @@ def json_serializer(data):
 def main():
     # Kafka server and topic configuration
     server = 'localhost:9092'
-    topic_name = 'green-data'
+    topic_name = 'green-trips'
     csv_file = 'data/green_tripdata_2019-10.csv.gz'  # Path to the .gz file
 
     # Selected columns to filter from the CSV
