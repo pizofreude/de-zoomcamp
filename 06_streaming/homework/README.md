@@ -72,6 +72,33 @@ Find out what you need to execute based on the `help` output.
 
 What's the version, based on the output of the command you executed? (copy the entire version)
 
+### Answer:
+
+To find out the version of Redpanda, we should run the rpk help command inside the redpanda-1 container. To do this, we can use the following command in our terminal:
+
+```bash
+docker exec -it redpanda-1 rpk help
+```
+
+This will execute the rpk help command inside the redpanda-1 container.
+
+The output of the command will provide information about the available commands and options for the rpk tool.
+
+From the output, we can see `version` as one of the available commands. To get the version of Redpanda, we can run the following command:
+```bash
+docker exec -it redpanda-1 rpk version
+
+OUTPUT:
+Version:     v24.2.18
+Git ref:     f9a22d4430
+Build date:  2025-02-14T12:52:55Z
+OS/Arch:     linux/amd64
+Go version:  go1.23.1
+
+Redpanda Cluster
+  node-1  v24.2.18 - f9a22d443087b824803638623d6b7492ec8221f9
+```
+
 
 ## Question 2. Creating a topic
 
@@ -83,6 +110,18 @@ redpandas.
 Read the output of `help` and based on it, create a topic with name `green-trips` 
 
 What's the output of the command for creating a topic? Include the entire output in your answer.
+
+### Answer:
+
+To create a topic with the name "green-trips" using the rpk command, we can use the following command:
+
+```bash
+docker-compose exec redpanda-1 rpk topic create green-trips
+
+OUTPUT:
+TOPIC        STATUS
+green-trips  OK
+```
 
 
 ## Question 3. Connecting to the Kafka server
@@ -122,6 +161,17 @@ producer.bootstrap_connected()
 
 Provided that you can connect to the server, what's the output
 of the last command?
+
+### Answer:
+
+We created the script `question3.py` and ran it in the terminal:
+
+```bash
+python src/producers/question3.py
+
+OUTPUT:
+Producer connected: True
+```
 
 ## Question 4: Sending the Trip Data
 
@@ -167,6 +217,22 @@ took = t1 - t0
 
 How much time did it take to send the entire dataset and flush? 
 
+### Answer:
+
+We created the script `src/producers/load_taxi_data.py` and ran it in the terminal:
+
+```bash
+$ python src/producers/load_taxi_data.py
+[INFO] Initializing Kafka producer...
+[SUCCESS] Connected to Kafka broker at localhost:9092.
+[INFO] Starting to process the compressed CSV file: data/green_tripdata_2019-10.csv.gz
+[INFO] Successfully processed 476386 rows from the compressed CSV file.
+[INFO] Flushing messages to Kafka...
+[SUCCESS] All data successfully sent to Kafka topic 'green-trips' in 62 seconds.
+```
+
+The script took 62 seconds to send the entire dataset and flush.
+
 
 ## Question 5: Build a Sessionization Window (2 points)
 
@@ -177,6 +243,105 @@ Now we have the data in the Kafka stream. It's time to process it.
 * Use a [session window](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/operators/windows/) with a gap of 5 minutes
 * Use `lpep_dropoff_datetime` time as your watermark with a 5 second tolerance
 * Which pickup and drop off locations have the longest unbroken streak of taxi trips?
+
+### Answer:
+
+Run this query to create the Postgres landing zone for the first events and windows:
+
+```sql
+CREATE TABLE taxi_events (
+    VendorID INTEGER,
+	lpep_pickup_datetime VARCHAR,
+	lpep_dropoff_datetime VARCHAR,
+	store_and_fwd_flag VARCHAR,
+	RatecodeID INTEGER,
+	PULocationID INTEGER,
+	DOLocationID INTEGER,
+	passenger_count INTEGER,
+	trip_distance NUMERIC(10, 2),
+	fare_amount NUMERIC(10, 2),
+	extra NUMERIC(10, 2),
+	mta_tax NUMERIC(10, 2),
+	tip_amount NUMERIC(10, 2),
+	tolls_amount NUMERIC(10, 2),
+	ehail_fee NUMERIC(10, 2),
+	improvement_surcharge NUMERIC(10, 2),
+	total_amount NUMERIC(10, 2),
+	payment_type INTEGER,
+	trip_type INTEGER,
+	congestion_surcharge NUMERIC(10, 2),
+	pickup_timestamp TIMESTAMP(3)
+);
+
+CREATE UNIQUE INDEX taxi_events_uniq ON taxi_events (pickup_timestamp, PULocationID, DOLocationID);
+```
+
+We created the script `src/session_job.py` and ran it in the terminal:
+
+```terminal
+C:\workspace\de-zoomcamp\06_streaming\homework>docker compose exec jobmanager ./bin/flink run -py /opt/src/job/session_job.py --pyFiles /opt/src -d
+Job has been submitted with JobID 9bbe970a646a9fb4e68612b633bf32f5
+```
+
+Thee job ran successfully in the Flink Job Manager. But no dataa was written to the Postgres database.
+
+So we reran the load_taxi_data.py script to send the data to the Kafka topic:
+
+```bash
+(venv) AbdulHafeez@IRHAFEEZ:/c/workspace/de-zoomcamp/06_streaming/homework$ python src/producers/load_taxi_data.py
+[INFO] Initializing Kafka producer...
+[SUCCESS] Connected to Kafka broker at localhost:9092.
+[INFO] Starting to process the compressed CSV file: data/green_tripdata_2019-10.csv.gz
+[INFO] Successfully processed 476386 rows from the compressed CSV file.
+[INFO] Flushing messages to Kafka...
+[SUCCESS] All data successfully sent to Kafka topic 'green-trips' in 97 seconds.
+```
+
+Then, in order to answer the question: Which pickup and drop off locations have the longest unbroken streak of taxi trips?
+
+We ran this SQL query in the Postgres database:
+
+```sql
+WITH ranked_trips AS (
+    SELECT
+        PULocationID,
+        DOLocationID,
+        pickup_timestamp,
+        ROW_NUMBER() OVER (
+            PARTITION BY PULocationID, DOLocationID
+            ORDER BY pickup_timestamp
+        ) AS trip_rank
+    FROM taxi_events
+),
+streaks AS (
+    SELECT
+        PULocationID,
+        DOLocationID,
+        COUNT(*) AS streak_length
+    FROM (
+        SELECT
+            PULocationID,
+            DOLocationID,
+            pickup_timestamp,
+            trip_rank - ROW_NUMBER() OVER (
+                PARTITION BY PULocationID, DOLocationID
+                ORDER BY pickup_timestamp
+            ) AS streak_id
+        FROM ranked_trips
+    ) subquery
+    GROUP BY PULocationID, DOLocationID, streak_id
+)
+SELECT
+    PULocationID,
+    DOLocationID,
+    MAX(streak_length) AS longest_streak
+FROM streaks
+GROUP BY PULocationID, DOLocationID
+ORDER BY longest_streak DESC
+LIMIT 1;
+```
+
+The result was: "pulocationid"/"dolocationid" = 95 with	"longest_streak" = 44
 
 
 ## Submitting the solutions
