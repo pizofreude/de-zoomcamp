@@ -25,7 +25,7 @@ The criteria for evaluation are following the recommended DTCS rubric: [Course P
 
 **1. Problem Description:**
 
-The problem is described clearly in the README file. The project focuses on analyzing Poland's real estate market through an interactive dashboard.
+The problem is described clearly in the README file. The project focuses on analyzing Poland's real estate market through a static dashboard.
 
 Score: 2 points
 
